@@ -388,7 +388,7 @@ func (state *State) paintSchemePicks(page *settingsPage) {
 				look = m.SchemeLookLight
 			}
 			ui.Text(c, look).FontSize(metrics.FontSizeS).Weight(gfx.WeightSemibold).Color(pal.text).LineHeight(20).MarginSides(0, 0, 14, 0)
-			ui.Row(c).Items(ui.Center).MarginSides(0, 0, 10, 0).Children(func() {
+			ui.Row(c).Items(ui.Center).Gap(10).MarginSides(0, 0, 10, 0).Children(func() {
 				ui.Text(c, m.SchemeQuickPicks).FontSize(metrics.FontSizeS).Weight(gfx.WeightSemibold).Color(pal.text).LineHeight(20).Grow(1)
 				page.button(hitThemeNew, state.themeText("New theme", "新建主题", "新增主題"), aiButtonOutline, false)
 				page.button(hitSchemeBrowseAll, fmt.Sprintf(m.SchemeMoreFmt, state.schemeTotal()), aiButtonOutline, false)

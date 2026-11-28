@@ -7,7 +7,7 @@ import "github.com/vivaui/viva/ui"
 func (state *State) paintThemePreviewTerminal(d *ui.DrawContext) {
 	e, canvas := &state.themeEditor, d.Canvas
 	if e.preview == nil {
-		e.preview = newTerminalWithScrollback(80, 12, 0)
+		e.preview = newTerminalWithScrollback(80, 16, 0)
 		_, _ = e.preview.screen.Write([]byte(themePreviewSample))
 	}
 	s := e.previewScheme()
@@ -37,12 +37,14 @@ func (state *State) paintThemePreviewTerminal(d *ui.DrawContext) {
 	if ch <= 0 {
 		ch = 20
 	}
-	style := gfx.TextStyle{Size: state.terminalFontSize, Color: p.termFG, MonoFace: state.terminalFontFace}
+	scale := min(float32(1), area.Width/(64*cw))
+	cw, ch = cw*scale, ch*scale
+	style := gfx.TextStyle{Size: state.terminalFontSize * scale, Color: p.termFG, MonoFace: state.terminalFontFace}
 	t := e.preview
 	t.cache.begin()
-	defer t.cache.end(12)
+	defer t.cache.end(16)
 	cursor := t.screen.Cursor()
-	for row := 0; row < 12; row++ {
+	for row := 0; row < 16; row++ {
 		column := -1
 		if row == cursor.Y {
 			column = cursor.X

@@ -31,6 +31,7 @@ type themeEditorState struct {
 	name                            ui.Field
 	colors                          [21]gfx.Color
 	pickers                         [21]ui.ColorPickerState
+	colorAnchors                    [21]gfx.Rect
 	colorIndex                      int
 	hex, red, green, blue           ui.Field
 	opacity                         ui.SliderState

@@ -3,6 +3,7 @@ package workbench
 import (
 	"fmt"
 	"github.com/vivaui/viva/components"
+	"github.com/vivaui/viva/gfx"
 	"github.com/vivaui/viva/ui"
 )
 
@@ -19,7 +20,7 @@ func (state *State) declareThemeEditor(c ui.C) {
 		width, height = min(width, 520), 230
 	}
 	dialog := ui.Dialog(c, ui.DialogSpec{Title: title, Width: width, Height: height,
-		Layer: dialogLayer, Scope: dialogScope, CloseID: hitThemeClose, InitialFocusID: hitThemeName})
+		Layer: dialogLayer, Scope: dialogScope, CloseID: hitThemeClose, NoClose: !e.deleting, InitialFocusID: hitThemeName})
 	if !e.deleting {
 		dialog.Header(func() {
 			ui.Row(c).FillWidth().Gap(8).Justify(ui.End).Children(func() {
@@ -27,9 +28,13 @@ func (state *State) declareThemeEditor(c ui.C) {
 				if e.maximized {
 					label = state.themeText("Restore", "还原", "還原")
 				}
-				ui.Button(c, label).Outline().Hit(hitThemeMaximize, label)
+				mark := themeMaximizeIcon
+				if e.maximized {
+					mark = themeRestoreIcon
+				}
+				ui.Button(c, label).Icon(mark).IconOnly().Ghost().Size(32, 32).Hit(hitThemeMaximize, label)
 				closeLabel := state.themeText("Close", "关闭", "關閉")
-				ui.Button(c, closeLabel).Outline().Hit(hitThemeClose, closeLabel)
+				ui.Button(c, closeLabel).Icon(lucideIcons[iconClose]).IconOnly().Ghost().Size(32, 32).Hit(hitThemeClose, closeLabel)
 			})
 		})
 	}
@@ -120,3 +125,11 @@ func (state *State) declareThemeEditorForm(c ui.C) {
 		ui.Paragraph(c, e.error, 3).FontSize(12).Color(state.pal.danger).LineHeight(18)
 	}
 }
+
+var themeMaximizeIcon = gfx.Icon{ViewBox: 24, Stroke: 1.5, Commands: []gfx.PathCommand{
+	gfx.MoveTo(5, 5), gfx.LineTo(19, 5), gfx.LineTo(19, 19), gfx.LineTo(5, 19), gfx.LineTo(5, 5),
+}}
+var themeRestoreIcon = gfx.Icon{ViewBox: 24, Stroke: 1.5, Commands: []gfx.PathCommand{
+	gfx.MoveTo(8, 5), gfx.LineTo(19, 5), gfx.LineTo(19, 16),
+	gfx.MoveTo(5, 8), gfx.LineTo(16, 8), gfx.LineTo(16, 19), gfx.LineTo(5, 19), gfx.LineTo(5, 8),
+}}

@@ -60,6 +60,16 @@ func TestCustomThemeEditorPointerTypingAndPreview(t *testing.T) {
 	if !state.themeEditor.pickers[9].Open() {
 		t.Fatal("clicking a color did not open the picker")
 	}
+	anchor := state.themeEditor.colorAnchors[9]
+	panel := state.themeEditor.pickers[9].GetLayout().Content
+	if panel.X > anchor.X+32 || panel.X+panel.Width+16 < anchor.X || panel.Y < anchor.Y+32 || panel.Y > anchor.Y+110 {
+		t.Fatalf("picker is not anchored to its swatch: anchor=%v panel=%v", anchor, panel)
+	}
+	if shots := os.Getenv("MOTTY_THEME_SCREENSHOTS"); shots != "" {
+		if err := view.Screenshot(filepath.Join(shots, "theme-color-picker.png")); err != nil {
+			t.Fatal(err)
+		}
+	}
 	chosen := gfx.RGB(96, 160, 240)
 	state.themeEditor.pickers[9].SetDraftValue(components.ColorPickerValue{}.WithColor(chosen))
 	if err := view.Rest(); err != nil {

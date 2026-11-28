@@ -73,7 +73,7 @@ func (state *State) declareThemeColors(c ui.C) {
 			label := state.themeColorLabel(i)
 			ui.Column(c).Gap(3).Items(ui.Center).Children(func() {
 				swatch := ui.ColorSwatch(c, e.colors[i], e.colorIndex == i, label).
-					Hit(hitThemeColors.At(i), label).Size(32, 32)
+					Hit(hitThemeColors.At(i), label).Size(32, 32).DrawOver(func(d *ui.DrawContext) { e.colorAnchors[i] = d.Rect })
 				ui.Text(c, label).FontSize(10).Color(state.pal.muted).LineHeight(16)
 				if swatch.Clicked() {
 					e.colorIndex = i
@@ -87,34 +87,33 @@ func (state *State) declareThemeColors(c ui.C) {
 	state.declareThemeColorFields(c)
 }
 
-// 色盘放在滚动区域外，弹出面板不会被编辑区裁剪。
+// 弹层脱离滚动裁剪，但锚点始终来自被点击的色块。
 func (state *State) declareThemeColorPicker(c ui.C) {
 	e := &state.themeEditor
-	ui.Row(c).Gap(10).Items(ui.Center).Children(func() {
-		label := state.themeColorLabel(e.colorIndex)
-		ui.Text(c, label).FontSize(13).Color(state.pal.text)
-		if ui.Button(c, state.themeText("Open color picker", "打开颜色选择器", "開啟色彩選擇器")).Outline().Clicked() {
-			e.openPicker = true
+	picker := &e.pickers[e.colorIndex]
+	if e.openPicker {
+		picker.SetDraftValue(components.ColorPickerValue{}.WithColor(e.colors[e.colorIndex]))
+		picker.SetOpenState(true)
+		e.openPicker = false
+	}
+
+	if picker.Applied() {
+		if e.colors[e.colorIndex].Alpha == 0 {
+			original := themeEditorState{draft: e.original}
+			original.loadDraft()
+			e.colors[e.colorIndex] = original.colors[e.colorIndex]
 		}
-		picker := &e.pickers[e.colorIndex]
-		if e.openPicker {
-			picker.SetDraftValue(components.ColorPickerValue{}.WithColor(e.colors[e.colorIndex]))
-			picker.SetOpenState(true)
-			e.openPicker = false
-		}
-		ui.ColorPicker(c, picker, &e.colors[e.colorIndex], label).PanelLabels(components.ColorPickerLabels{
+		e.syncColorFields()
+	}
+	if !picker.Open() {
+		return
+	}
+	ui.Overlay(c, ui.OverlaySpec{Band: ui.Band(dialogLayer + 2), Bounds: e.colorAnchors[e.colorIndex]}).Children(func() {
+		ui.ColorPicker(c, picker, &e.colors[e.colorIndex], state.themeColorLabel(e.colorIndex)).PanelLabels(components.ColorPickerLabels{
 			Color: state.messages.ColorPickerChoose, Saturation: state.messages.ColorPickerSV,
 			Hue: state.messages.ColorPickerHue, Hex: "HEX", Clear: state.messages.FindSettings.Reset,
 			Cancel: state.messages.Cancel, Apply: state.messages.ColorPickerApply,
 		})
-		if picker.Applied() {
-			if e.colors[e.colorIndex].Alpha == 0 {
-				original := themeEditorState{draft: e.original}
-				original.loadDraft()
-				e.colors[e.colorIndex] = original.colors[e.colorIndex]
-			}
-			e.syncColorFields()
-		}
 	})
 }
 
