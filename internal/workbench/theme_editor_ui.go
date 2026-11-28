@@ -23,7 +23,9 @@ func (state *State) declareThemeEditor(c ui.C) {
 		Layer: dialogLayer, Scope: dialogScope, CloseID: hitThemeClose, NoClose: !e.deleting, InitialFocusID: hitThemeName})
 	if !e.deleting {
 		dialog.Header(func() {
-			ui.Row(c).FillWidth().Gap(8).Justify(ui.End).Children(func() {
+			// 标题栏按钮以外框为基准，不继承表单内容的内边距。
+			padding := c.Theme().Metrics.PadSurface + c.Theme().Metrics.GapItem
+			ui.Row(c).Absolute().Top(4 - padding).Right(4 - padding).Height(36).Children(func() {
 				label := state.themeText("Maximize", "最大化", "最大化")
 				if e.maximized {
 					label = state.themeText("Restore", "还原", "還原")
@@ -32,9 +34,9 @@ func (state *State) declareThemeEditor(c ui.C) {
 				if e.maximized {
 					mark = themeRestoreIcon
 				}
-				ui.Button(c, label).Icon(mark).IconOnly().Ghost().Size(32, 32).Hit(hitThemeMaximize, label)
+				ui.Button(c, label).Icon(mark).IconOnly().Ghost().Size(36, 36).Hit(hitThemeMaximize, label)
 				closeLabel := state.themeText("Close", "关闭", "關閉")
-				ui.Button(c, closeLabel).Icon(lucideIcons[iconClose]).IconOnly().Ghost().Size(32, 32).Hit(hitThemeClose, closeLabel)
+				ui.Button(c, closeLabel).Icon(lucideIcons[iconClose]).IconOnly().Ghost().Size(36, 36).Hit(hitThemeClose, closeLabel)
 			})
 		})
 	}
