@@ -1498,7 +1498,8 @@ func (state *State) resolveAppearance() appearance {
 // system again, and reports whether anything changed.
 func (state *State) chooseAppearanceMode(mode appearanceMode) bool {
 	changed := state.appearanceMode != mode
-	if mode == appearanceFollowTerminal && state.applicationTheme.FollowScheme == "" {
+	// 重新启用跟随时捕获当前终端主题，避免恢复上次跟随的旧来源。
+	if mode == appearanceFollowTerminal && (changed || state.applicationTheme.FollowScheme == "") {
 		state.applicationTheme.FollowScheme = state.normalizeSchemeID(state.activeScheme())
 		state.applicationTheme.FollowBase = state.terminalSchemeAppearance().String()
 	}
