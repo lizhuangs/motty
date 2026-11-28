@@ -18,12 +18,15 @@ import (
 // Default, is whatever the application palette already uses.
 
 type colorScheme struct {
-	id         string
-	name       string
-	background [3]uint8
-	foreground [3]uint8
-	cursor     [3]uint8
-	ansi       [16][3]uint8
+	id                       string
+	name                     string
+	background               [3]uint8
+	foreground               [3]uint8
+	cursor                   [3]uint8
+	ansi                     [16][3]uint8
+	selection, selectionText [3]uint8
+	customSelection          bool
+	opacity                  *int
 }
 
 const defaultSchemeID = "default"
@@ -151,6 +154,11 @@ const schemeCount = len(colorSchemes) + 1
 // schemeByID finds a scheme among the built-ins, the embedded collection and
 // the user's directory.
 func (state *State) schemeByID(id string) (*colorScheme, bool) {
+	for i := range state.managedSchemes {
+		if state.managedSchemes[i].id == id {
+			return &state.managedSchemes[i], true
+		}
+	}
 	for index := range colorSchemes {
 		if colorSchemes[index].id == id {
 			return &colorSchemes[index], true
@@ -176,7 +184,10 @@ func (state *State) normalizeSchemeID(id string) string {
 
 // activeScheme is the chosen scheme for the current appearance.
 func (state *State) activeScheme() string {
-	return state.terminalSchemes[state.appearance]
+	if state.appearanceMode == appearanceFollowTerminal {
+		return state.followScheme()
+	}
+	return state.terminalSchemes[state.terminalSchemeAppearance()]
 }
 
 // migrateTerminalScheme places the single scheme an earlier release saved. It
@@ -201,7 +212,9 @@ func (state *State) migrateTerminalScheme(id string) (dark, light string) {
 // prepared line is built again with it.
 func (state *State) rebuildTerminalLook() {
 	look := *state.pal
-	look.termFG = look.text
+	base := state.terminalSchemeAppearance().palette()
+	look.dark, look.terminal = base.dark, base.terminal
+	look.termFG, look.cursor, look.ansi = base.termFG, base.cursor, base.ansi
 	schemeID := state.activeScheme()
 	if state.schemePreview.shown != "" {
 		schemeID = state.schemePreview.shown
@@ -212,6 +225,9 @@ func (state *State) rebuildTerminalLook() {
 		look.termFG = gfx.RGB(scheme.foreground[0], scheme.foreground[1], scheme.foreground[2])
 		look.cursor = gfx.RGB(scheme.cursor[0], scheme.cursor[1], scheme.cursor[2])
 		look.ansi = scheme.ansi
+		look.selection = schemeRGB(scheme.selection)
+		look.selectionText = schemeRGB(scheme.selectionText)
+		look.customSelection = scheme.customSelection
 	}
 	look.highlight = state.highlights
 	look.intense = state.terminalIntense
@@ -271,7 +287,13 @@ func (state *State) setTerminalScheme(id string) bool {
 	if state.activeScheme() == id {
 		return false
 	}
-	state.terminalSchemes[state.appearance] = id
+	if state.appearanceMode == appearanceFollowTerminal {
+		state.applicationTheme.FollowScheme = id
+		state.applicationTheme.FollowBase = state.appearance.String()
+		state.refreshApplicationTheme()
+		return true
+	}
+	state.terminalSchemes[state.terminalSchemeAppearance()] = id
 	state.rebuildTerminalLook()
 	return true
 }
@@ -316,7 +338,7 @@ func schemeDrawerHit(index int) gfx.ID { return hitSchemeDrawerList.At(index) }
 // schemeTotal is how many cards the browser has: the hand-written built-ins,
 // the embedded community collection and the user's directory.
 func (state *State) schemeTotal() int {
-	return schemeCount + len(communitySchemes) + len(state.dirSchemes)
+	return schemeCount + len(communitySchemes) + len(state.dirSchemes) + len(state.managedSchemes)
 }
 
 // schemeAt is the id and name of the card at index, Default first, then the
@@ -339,6 +361,11 @@ func (state *State) schemeAt(index int) (id, name string, scheme *colorScheme) {
 		scheme = &state.dirSchemes[index]
 		return scheme.id, scheme.name, scheme
 	}
+	index -= len(state.dirSchemes)
+	if index >= 0 && index < len(state.managedSchemes) {
+		scheme = &state.managedSchemes[index]
+		return scheme.id, scheme.name, scheme
+	}
 	return "", "", nil
 }
 
@@ -346,6 +373,7 @@ func (state *State) schemeAt(index int) (id, name string, scheme *colorScheme) {
 // the complete collection opens in a drawer.
 func (state *State) paintSchemeSettings(page *settingsPage) {
 	state.paintSchemePicks(page)
+	state.paintThemeManagement(page)
 }
 
 // paintSchemePicks is two rows: seven well-known built-ins, Rose Pine Moon from
@@ -357,7 +385,7 @@ func (state *State) paintSchemePicks(page *settingsPage) {
 		ui.Column(c).PadSides(14, 18, 22, 18).Children(func() {
 			ui.Paragraph(c, m.SchemeDescription, 2).FontSize(metrics.FontSizeS).Color(pal.muted).LineHeight(20).MarginSides(0, 0, 6, 0)
 			look := m.SchemeLookDark
-			if state.appearance == appearanceLight {
+			if state.terminalSchemeAppearance() == appearanceLight {
 				look = m.SchemeLookLight
 			}
 			ui.Text(c, look).FontSize(metrics.FontSizeS).Weight(gfx.WeightSemibold).Color(pal.text).LineHeight(20).MarginSides(0, 0, 14, 0)
@@ -583,7 +611,7 @@ func (state *State) communitySchemeIndices() (dark, light []int) {
 
 // userSchemeIndices lists the cards from the data folder's schemes directory.
 func (state *State) userSchemeIndices() []int {
-	indices := make([]int, len(state.dirSchemes))
+	indices := make([]int, len(state.dirSchemes)+len(state.managedSchemes))
 	base := schemeCount + len(communitySchemes)
 	for index := range indices {
 		indices[index] = base + index
@@ -689,7 +717,7 @@ func (state *State) declareSchemeDrawerBody(c ui.C, columns int) {
 			dark, light := state.communitySchemeIndices()
 			state.paintSchemeDrawerGroup(c, fmt.Sprintf("%s · %s (%d)", m.SchemeCommunity, m.SchemeDark, len(dark)), dark, columns)
 			state.paintSchemeDrawerGroup(c, fmt.Sprintf("%s · %s (%d)", m.SchemeCommunity, m.SchemeLight, len(light)), light, columns)
-			state.paintSchemeDrawerGroup(c, fmt.Sprintf("%s (%d)", m.SchemeMine, len(state.dirSchemes)), state.userSchemeIndices(), columns)
+			state.paintSchemeDrawerGroup(c, fmt.Sprintf("%s (%d)", m.SchemeMine, len(state.dirSchemes)+len(state.managedSchemes)), state.userSchemeIndices(), columns)
 			ui.Spacer(c).Height(10)
 		})
 	})

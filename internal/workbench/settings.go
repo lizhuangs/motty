@@ -792,7 +792,7 @@ func (state *State) applyTerminalScrollback() {
 // value itself, so these are the values it offers.
 var (
 	settingsLanguageChoices        = [...]i18n.Language{i18n.English, i18n.Chinese, i18n.TraditionalChinese}
-	settingsAppearanceChoices      = [...]appearanceMode{appearanceFollowSystem, appearancePinnedDark, appearancePinnedLight}
+	settingsAppearanceChoices      = [...]appearanceMode{appearanceFollowSystem, appearancePinnedDark, appearancePinnedLight, appearanceFollowTerminal, appearanceCustom}
 	settingsCornerChoices          = [...]cornerStyle{cornersRounded, cornersSquare}
 	settingsToolbarPositionChoices = [...]terminalToolbarPosition{terminalToolbarLeft, terminalToolbarRight}
 	settingsTabOrientationChoices  = [...]tabOrientation{tabsHorizontal, tabsVertical}
@@ -827,6 +827,10 @@ func (state *State) settingsAppearanceLabel(mode appearanceMode) string {
 		return state.messages.SettingsAppearanceDark
 	case appearancePinnedLight:
 		return state.messages.SettingsAppearanceLight
+	case appearanceFollowTerminal:
+		return state.themeText("Follow terminal", "跟随终端", "跟隨終端")
+	case appearanceCustom:
+		return state.themeText("Custom", "自定义", "自訂")
 	}
 	return state.messages.SettingsAppearanceSystem
 }

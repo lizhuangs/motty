@@ -752,6 +752,8 @@ type State struct {
 	menuBarSig           string
 	appearance           appearance
 	appearanceMode       appearanceMode
+	applicationTheme     applicationTheme
+	applicationThemeUI   applicationThemeControls
 	cornerStyle          cornerStyle
 	terminalTransparency ui.SliderState
 	// playback is the recording being played, while its dialog is open.
@@ -1009,6 +1011,8 @@ type State struct {
 	terminalSchemes [2]string
 	// dirSchemes are the user's own schemes from the data folder, loaded before
 	// the saved state restores the ids that select them.
+	managedSchemes []colorScheme
+	themeEditor    themeEditorState
 	dirSchemes     []colorScheme
 	dirSchemeIndex map[string]int
 	// schemeFilter is the drawer's search box. View state, so it is not kept.
@@ -1479,6 +1483,10 @@ func (state *State) resolveAppearance() appearance {
 		return appearanceLight
 	case appearancePinnedDark:
 		return appearanceDark
+	case appearanceFollowTerminal:
+		return state.followAppearance()
+	case appearanceCustom:
+		return state.applicationTheme.colorAppearance()
 	}
 	if state.options.SystemAppearance() == app.AppearanceLight {
 		return appearanceLight
@@ -1490,13 +1498,19 @@ func (state *State) resolveAppearance() appearance {
 // system again, and reports whether anything changed.
 func (state *State) chooseAppearanceMode(mode appearanceMode) bool {
 	changed := state.appearanceMode != mode
+	if mode == appearanceFollowTerminal && state.applicationTheme.FollowScheme == "" {
+		state.applicationTheme.FollowScheme = state.normalizeSchemeID(state.activeScheme())
+		state.applicationTheme.FollowBase = state.terminalSchemeAppearance().String()
+	}
+	if mode == appearanceCustom && state.applicationTheme.Base == "" {
+		state.applicationTheme.Base = state.appearance.String()
+	}
 	state.appearanceMode = mode
 	state.syncNativeAppearance() // before the system is read: a pin hides it
-	if look := state.resolveAppearance(); look != state.appearance {
-		state.setAppearance(look)
-		changed = true
-	}
-	return changed
+	look := state.resolveAppearance()
+	lookChanged := look != state.appearance
+	state.setAppearance(look)
+	return changed || lookChanged
 }
 
 // syncNativeAppearance has what the system draws around the window (its buttons,
@@ -1508,6 +1522,12 @@ func (state *State) syncNativeAppearance() {
 		state.options.SetNativeAppearance(app.AppearanceLight)
 	case appearancePinnedDark:
 		state.options.SetNativeAppearance(app.AppearanceDark)
+	case appearanceFollowTerminal, appearanceCustom:
+		if state.resolveAppearance() == appearanceLight {
+			state.options.SetNativeAppearance(app.AppearanceLight)
+		} else {
+			state.options.SetNativeAppearance(app.AppearanceDark)
+		}
 	default:
 		state.options.SetNativeAppearance(app.AppearanceUnknown)
 	}
@@ -1534,7 +1554,7 @@ func (state *State) setAppearance(appearance appearance) {
 		state.schemePreview.sawHover = false
 	}
 	state.appearance = appearance
-	state.pal = appearance.palette()
+	state.pal = state.resolveApplicationPalette(appearance)
 	state.theme = state.pal.theme()
 	state.rebuildTerminalLook()
 	state.invalidateRemoteToolsWindows()
@@ -2049,6 +2069,9 @@ func (state *State) click(id gfx.ID, feedback bool) {
 		return
 	case modalFontPicker:
 		state.clickFontPicker(id)
+		return
+	case modalThemeEditor:
+		state.clickThemeEditor(id)
 		return
 	case modalIconColorPicker:
 		state.clickIconColorPicker(id)
