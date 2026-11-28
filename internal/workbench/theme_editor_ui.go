@@ -62,9 +62,6 @@ func (state *State) declareThemeEditor(c ui.C) {
 					}
 				})
 			}
-			if !e.expanded && (!narrow || !e.previewOnly) {
-				state.declareThemeColorPicker(c)
-			}
 			ui.Row(c).Grow(1).Basis(0).Gap(20).Children(func() {
 				if !e.expanded && (!narrow || !e.previewOnly) {
 					ui.Scroll(c).Grow(1).Basis(0).Scrollbars().Children(func() {

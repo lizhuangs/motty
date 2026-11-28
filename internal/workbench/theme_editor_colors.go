@@ -5,12 +5,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/vivaui/viva/components"
 	"github.com/vivaui/viva/gfx"
 	"github.com/vivaui/viva/ui"
 )
 
 func (e *themeEditorState) loadDraft() {
+	for i := range e.pickers {
+		e.pickers[i].ClosePanel()
+	}
+	e.openPicker = false
 	s := &e.draft
 	e.name.SetText(s.name)
 	e.colors[0], e.colors[1], e.colors[2] = schemeRGB(s.background), schemeRGB(s.foreground), schemeRGB(s.cursor)
@@ -76,45 +79,19 @@ func (state *State) declareThemeColors(c ui.C) {
 					Hit(hitThemeColors.At(i), label).Size(32, 32).DrawOver(func(d *ui.DrawContext) { e.colorAnchors[i] = d.Rect })
 				ui.Text(c, label).FontSize(10).Color(state.pal.muted).LineHeight(16)
 				if swatch.Clicked() {
+					e.pickers[e.colorIndex].ClosePanel()
 					e.colorIndex = i
 					e.syncColorFields()
 					e.openPicker = true
+				}
+				if e.colorIndex == i {
+					state.declareThemeColorPicker(c, swatch)
 				}
 			})
 		}
 	})
 
 	state.declareThemeColorFields(c)
-}
-
-// 弹层脱离滚动裁剪，但锚点始终来自被点击的色块。
-func (state *State) declareThemeColorPicker(c ui.C) {
-	e := &state.themeEditor
-	picker := &e.pickers[e.colorIndex]
-	if e.openPicker {
-		picker.SetDraftValue(components.ColorPickerValue{}.WithColor(e.colors[e.colorIndex]))
-		picker.SetOpenState(true)
-		e.openPicker = false
-	}
-
-	if picker.Applied() {
-		if e.colors[e.colorIndex].Alpha == 0 {
-			original := themeEditorState{draft: e.original}
-			original.loadDraft()
-			e.colors[e.colorIndex] = original.colors[e.colorIndex]
-		}
-		e.syncColorFields()
-	}
-	if !picker.Open() {
-		return
-	}
-	ui.Overlay(c, ui.OverlaySpec{Band: ui.Band(dialogLayer + 2), Bounds: e.colorAnchors[e.colorIndex]}).Children(func() {
-		ui.ColorPicker(c, picker, &e.colors[e.colorIndex], state.themeColorLabel(e.colorIndex)).PanelLabels(components.ColorPickerLabels{
-			Color: state.messages.ColorPickerChoose, Saturation: state.messages.ColorPickerSV,
-			Hue: state.messages.ColorPickerHue, Hex: "HEX", Clear: state.messages.FindSettings.Reset,
-			Cancel: state.messages.Cancel, Apply: state.messages.ColorPickerApply,
-		})
-	})
 }
 
 func (e *themeEditorState) useTemplate(look appearance) {
@@ -124,7 +101,7 @@ func (e *themeEditorState) useTemplate(look appearance) {
 	e.loadDraft()
 }
 
-// 所有预览读取同一份临时色盘值；取消色盘后自然恢复已确认的草稿。
+// 色盘直接更新编辑草稿；预览也读取当前正在拖动的颜色。
 func (e *themeEditorState) previewScheme() colorScheme {
 	s := e.collectDraft()
 	if color, ok := e.pickers[e.colorIndex].Draft(); ok {

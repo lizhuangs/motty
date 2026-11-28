@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/vivaui/viva/components"
 	"github.com/vivaui/viva/gfx"
 	"github.com/vivaui/viva/ui"
 	"motty/internal/i18n"
@@ -32,6 +33,9 @@ type themeEditorState struct {
 	colors                          [21]gfx.Color
 	pickers                         [21]ui.ColorPickerState
 	colorAnchors                    [21]gfx.Rect
+	liveColorHex                    ui.Field
+	liveColorInput                  ui.Handlers
+	liveColorLayout                 components.ColorPickerLayout
 	colorIndex                      int
 	hex, red, green, blue           ui.Field
 	opacity                         ui.SliderState

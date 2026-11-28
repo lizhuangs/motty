@@ -35,18 +35,13 @@ func TestCustomThemeFollowBackgroundThroughEditor(t *testing.T) {
 	}
 	color := gfx.RGB(72, 30, 45)
 	state.themeEditor.pickers[0].SetDraftValue(components.ColorPickerValue{}.WithColor(color))
-	if err := view.Rest(); err != nil {
+	if err := view.Frame(); err != nil {
 		t.Fatal(err)
 	}
-	if err := view.ClickLabel(state.messages.ColorPickerApply); err != nil {
-		t.Fatal(err)
+	if _, ok := view.Hit(state.messages.ColorPickerApply); ok {
+		t.Fatal("picker still requires confirmation")
 	}
-	if err := view.Rest(); err != nil {
-		t.Fatal(err)
-	}
-	if err := view.ClickLabel("保存并应用"); err != nil {
-		t.Fatal(err)
-	}
+	clickThemeThroughPopover(t, view, "保存并应用")
 	if err := view.Rest(); err != nil {
 		t.Fatal(err)
 	}
@@ -94,4 +89,56 @@ func TestCustomThemeFollowBackgroundThroughEditor(t *testing.T) {
 	if _, ok := restored.schemeByID(id); !ok {
 		t.Fatal("saved theme missing after restart")
 	}
+}
+
+func TestCustomThemeLiveColorCancelKeepsSavedTheme(t *testing.T) {
+	state := newTestState(t, freshOptions(t))
+	state.setLanguage(i18n.Chinese)
+	state.openThemeEditor(true, false)
+	original := state.themeEditor.colors[0]
+	view, err := headless.Open(state.WindowConfig(app.Config{Title: "Theme", Width: 1280, Height: 900, Tree: Tree(), Paint: state.Paint, OnPointer: state.Pointer, OnKey: state.Key}), nil, headless.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer view.Close()
+	if err := view.Wait(30 * time.Millisecond); err != nil {
+		t.Fatal(err)
+	}
+	if err := view.ClickLabel("背景"); err != nil {
+		t.Fatal(err)
+	}
+	if err := view.Rest(); err != nil {
+		t.Fatal(err)
+	}
+	if err := view.ClickLabel(state.messages.ColorPickerSV); err != nil {
+		t.Fatal(err)
+	}
+	if state.themeEditor.colors[0] == original {
+		t.Fatal("picking color did not update draft immediately")
+	}
+	clickThemeThroughPopover(t, view, "文字")
+	if state.themeEditor.colorIndex != 1 {
+		t.Fatal("clicking another swatch did not switch picker")
+	}
+	clickThemeThroughPopover(t, view, state.messages.Cancel)
+	if state.modal != modalNone || len(state.managedSchemes) != 0 {
+		t.Fatal("cancel saved the draft")
+	}
+}
+
+// 用真实坐标点击弹层外控件，验证同一次鼠标点击会关闭色盘并执行目标动作。
+func clickThemeThroughPopover(t *testing.T, view *headless.Session, label string) {
+	t.Helper()
+	hits := view.Snapshot().Hits
+	for i := len(hits) - 1; i >= 0; i-- {
+		if hits[i].Label != label {
+			continue
+		}
+		r := hits[i].Bounds
+		if err := view.Click(r.X+r.Width/2, r.Y+r.Height/2); err != nil {
+			t.Fatal(err)
+		}
+		return
+	}
+	t.Fatalf("missing control %q", label)
 }

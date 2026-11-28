@@ -39,9 +39,7 @@ func TestCustomThemeEditorPointerTypingAndPreview(t *testing.T) {
 	if state.themeEditor.maximized {
 		t.Fatal("editor did not restore")
 	}
-	if err := view.ClickLabel("主题名称"); err != nil {
-		t.Fatal(err)
-	}
+	clickThemeThroughPopover(t, view, "主题名称")
 	if err := view.Type(" edited"); err != nil {
 		t.Fatal(err)
 	}
@@ -72,15 +70,13 @@ func TestCustomThemeEditorPointerTypingAndPreview(t *testing.T) {
 	}
 	chosen := gfx.RGB(96, 160, 240)
 	state.themeEditor.pickers[9].SetDraftValue(components.ColorPickerValue{}.WithColor(chosen))
-	if err := view.Rest(); err != nil {
+	if err := view.Frame(); err != nil {
 		t.Fatal(err)
 	}
 	if state.themeEditor.previewScheme().ansi[4] != rgb8(chosen) {
 		t.Fatal("picker draft did not reach preview")
 	}
-	if err := view.ClickLabel(state.messages.ColorPickerApply); err != nil {
-		t.Fatal(err)
-	}
+	clickThemeThroughPopover(t, view, "主题名称")
 	if err := view.Rest(); err != nil {
 		t.Fatal(err)
 	}
