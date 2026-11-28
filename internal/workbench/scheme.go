@@ -403,6 +403,7 @@ func (state *State) openSchemeBrowser() {
 	state.schemeBrowserOpen = true
 	state.schemeFilter = *text.NewEditor("")
 	state.scheme.filter = ""
+	state.scheme.category = schemeFilterAll
 	state.scheme.reset = true
 }
 
@@ -545,8 +546,7 @@ func (state *State) schemeMenuItem(c ui.C, menu *ui.MenuItems, index int, active
 	}
 }
 
-// schemeQuickPicks is seven hand-written built-ins, one community pick and the
-// active scheme and saved custom themes when they would otherwise be off the list.
+// 首页保留两行推荐配色，第三行展示最近创建的四个自定义主题。
 func (state *State) schemeQuickPicks() []int {
 	preferred := []string{defaultSchemeID, "windows-terminal", "dracula", "nord", "one-dark", "tokyo-night", "gruvbox-dark"}
 	picks := make([]int, 0, schemeColumns*2)
@@ -567,13 +567,8 @@ func (state *State) schemeQuickPicks() []int {
 	for index := 0; index < schemeCount && len(picks) < schemeColumns*2; index++ {
 		add(index, true)
 	}
-	// 自定义主题固定显示在同一组卡片中，不因当前外观或选择变化而消失。
-	for _, scheme := range state.managedSchemes {
-		index, ok := state.schemeIndexByID(scheme.id)
-		add(index, ok)
-	}
-	// 列表之外的当前主题放在末尾，不挤占内置或自定义主题的位置。
-	if index, ok := state.schemeIndexByID(state.activeScheme()); ok {
+	for i := len(state.managedSchemes) - 1; i >= 0 && len(picks) < schemeColumns*3; i-- {
+		index, ok := state.schemeIndexByID(state.managedSchemes[i].id)
 		add(index, ok)
 	}
 	return picks
@@ -612,10 +607,13 @@ func (state *State) communitySchemeIndices() (dark, light []int) {
 
 // userSchemeIndices lists the cards from the data folder's schemes directory.
 func (state *State) userSchemeIndices() []int {
-	indices := make([]int, len(state.dirSchemes)+len(state.managedSchemes))
+	indices := make([]int, 0, len(state.dirSchemes)+len(state.managedSchemes))
 	base := schemeCount + len(communitySchemes)
-	for index := range indices {
-		indices[index] = base + index
+	for i := len(state.managedSchemes) - 1; i >= 0; i-- {
+		indices = append(indices, base+len(state.dirSchemes)+i)
+	}
+	for i := range state.dirSchemes {
+		indices = append(indices, base+i)
 	}
 	return indices
 }
@@ -645,12 +643,13 @@ func schemeMatches(name, filter string) bool {
 // controls are declared in the workbench page; what it keeps here is the search
 // field, the scroll area, and the filter its last declaration ranked.
 type schemeUI struct {
-	field  ui.Field
-	bound  bool
-	body   gfx.Rect
-	scroll ui.Box
-	filter string
-	reset  bool
+	category schemeCategory
+	field    ui.Field
+	bound    bool
+	body     gfx.Rect
+	scroll   ui.Box
+	filter   string
+	reset    bool
 }
 
 // declareSchemeDrawer declares the complete collection as a Drawer of the
@@ -694,13 +693,14 @@ func (state *State) declareSchemeDrawerBody(c ui.C, columns int) {
 	body.Children(func() {
 		ui.TextField(c, &scheme.field, m.SchemeSearchPlaceholder, m.SchemeSearchPlaceholder, ui.WithID(hitSchemeSearch)).
 			Icon(lucideIcons[iconSearch]).Height(schemeSearchHeight).FillWidth().MarginSides(0, 0, 10, 0).Shrink(0)
+		state.declareSchemeCategoryFilter(c)
 		ui.Paragraph(c, fmt.Sprintf(m.SchemeDirHintFmt, state.schemesDir()), 2).FontSize(metrics.FontSizeS).Color(pal.muted).LineHeight(18).MarginSides(0, 0, 8, 0)
 		scroll := ui.Scroll(c).Grow(1).Basis(0)
 		scheme.scroll = scroll
 		scroll.Children(func() {
 			filter := strings.ToLower(strings.TrimSpace(scheme.field.Text()))
 			if filter != "" {
-				matches := state.schemesMatching(filter)
+				matches := state.filteredSchemeIndices(filter)
 				ui.Text(c, fmt.Sprintf(m.SchemeResultsFmt, len(matches))).FontSize(metrics.FontSizeS).Weight(gfx.WeightSemibold).Color(pal.text).LineHeight(20).MarginSides(0, 0, 8, 0)
 				if len(matches) == 0 {
 					ui.Text(c, m.SchemeNoMatches).FontSize(metrics.FontSizeS).Color(pal.muted).LineHeight(20)
@@ -710,15 +710,11 @@ func (state *State) declareSchemeDrawerBody(c ui.C, columns int) {
 				ui.Spacer(c).Height(10)
 				return
 			}
-			builtins := make([]int, 0, schemeCount)
-			for index := 0; index < schemeCount; index++ {
-				builtins = append(builtins, index)
+			for _, group := range state.schemeDrawerGroups() {
+				if scheme.category == schemeFilterAll || scheme.category == group.category {
+					state.paintSchemeDrawerGroup(c, fmt.Sprintf("%s (%d)", group.title, len(group.indices)), group.indices, columns)
+				}
 			}
-			state.paintSchemeDrawerGroup(c, fmt.Sprintf("%s (%d)", m.SchemeBuiltin, len(builtins)), builtins, columns)
-			dark, light := state.communitySchemeIndices()
-			state.paintSchemeDrawerGroup(c, fmt.Sprintf("%s · %s (%d)", m.SchemeCommunity, m.SchemeDark, len(dark)), dark, columns)
-			state.paintSchemeDrawerGroup(c, fmt.Sprintf("%s · %s (%d)", m.SchemeCommunity, m.SchemeLight, len(light)), light, columns)
-			state.paintSchemeDrawerGroup(c, fmt.Sprintf("%s (%d)", m.SchemeMine, len(state.dirSchemes)+len(state.managedSchemes)), state.userSchemeIndices(), columns)
 			ui.Spacer(c).Height(10)
 		})
 	})
