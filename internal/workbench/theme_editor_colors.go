@@ -78,6 +78,7 @@ func (state *State) declareThemeColors(c ui.C) {
 				if swatch.Clicked() {
 					e.colorIndex = i
 					e.syncColorFields()
+					e.openPicker = true
 				}
 			})
 		}
@@ -91,8 +92,16 @@ func (state *State) declareThemeColorPicker(c ui.C) {
 	e := &state.themeEditor
 	ui.Row(c).Gap(10).Items(ui.Center).Children(func() {
 		label := state.themeColorLabel(e.colorIndex)
-		ui.Text(c, label).Grow(1).FontSize(13).Color(state.pal.text)
+		ui.Text(c, label).FontSize(13).Color(state.pal.text)
+		if ui.Button(c, state.themeText("Open color picker", "打开颜色选择器", "開啟色彩選擇器")).Outline().Clicked() {
+			e.openPicker = true
+		}
 		picker := &e.pickers[e.colorIndex]
+		if e.openPicker {
+			picker.SetDraftValue(components.ColorPickerValue{}.WithColor(e.colors[e.colorIndex]))
+			picker.SetOpenState(true)
+			e.openPicker = false
+		}
 		ui.ColorPicker(c, picker, &e.colors[e.colorIndex], label).PanelLabels(components.ColorPickerLabels{
 			Color: state.messages.ColorPickerChoose, Saturation: state.messages.ColorPickerSV,
 			Hue: state.messages.ColorPickerHue, Hex: "HEX", Clear: state.messages.FindSettings.Reset,

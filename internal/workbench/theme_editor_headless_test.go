@@ -27,6 +27,18 @@ func TestCustomThemeEditorPointerTypingAndPreview(t *testing.T) {
 	if err := view.Wait(30 * time.Millisecond); err != nil {
 		t.Fatal(err)
 	}
+	if err := view.ClickLabel("最大化"); err != nil {
+		t.Fatal(err)
+	}
+	if !state.themeEditor.maximized {
+		t.Fatal("editor did not maximize")
+	}
+	if err := view.ClickLabel("还原"); err != nil {
+		t.Fatal(err)
+	}
+	if state.themeEditor.maximized {
+		t.Fatal("editor did not restore")
+	}
 	if err := view.ClickLabel("主题名称"); err != nil {
 		t.Fatal(err)
 	}
@@ -42,8 +54,11 @@ func TestCustomThemeEditorPointerTypingAndPreview(t *testing.T) {
 	if state.themeEditor.colorIndex != 9 {
 		t.Fatal("swatch did not select ANSI 4")
 	}
-	if err := view.ClickLabel(state.messages.ColorPickerChoose); err != nil {
+	if err := view.Rest(); err != nil {
 		t.Fatal(err)
+	}
+	if !state.themeEditor.pickers[9].Open() {
+		t.Fatal("clicking a color did not open the picker")
 	}
 	chosen := gfx.RGB(96, 160, 240)
 	state.themeEditor.pickers[9].SetDraftValue(components.ColorPickerValue{}.WithColor(chosen))

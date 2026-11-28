@@ -10,6 +10,9 @@ func (state *State) declareThemeEditor(c ui.C) {
 	e := &state.themeEditor
 	width := min(float32(1120), c.Bounds().Width-32)
 	height := min(float32(760), c.Bounds().Height-40)
+	if e.maximized {
+		width, height = c.Bounds().Width-32, c.Bounds().Height-32
+	}
 	title := state.themeText("Theme editor", "主题编辑器", "主題編輯器")
 	if e.deleting {
 		title = state.themeText("Delete theme", "删除主题", "刪除主題")
@@ -17,6 +20,19 @@ func (state *State) declareThemeEditor(c ui.C) {
 	}
 	dialog := ui.Dialog(c, ui.DialogSpec{Title: title, Width: width, Height: height,
 		Layer: dialogLayer, Scope: dialogScope, CloseID: hitThemeClose, InitialFocusID: hitThemeName})
+	if !e.deleting {
+		dialog.Header(func() {
+			ui.Row(c).FillWidth().Gap(8).Justify(ui.End).Children(func() {
+				label := state.themeText("Maximize", "最大化", "最大化")
+				if e.maximized {
+					label = state.themeText("Restore", "还原", "還原")
+				}
+				ui.Button(c, label).Outline().Hit(hitThemeMaximize, label)
+				closeLabel := state.themeText("Close", "关闭", "關閉")
+				ui.Button(c, closeLabel).Outline().Hit(hitThemeClose, closeLabel)
+			})
+		})
+	}
 	dialog.Body(func() {
 		if e.deleting {
 			ui.Paragraph(c, state.themeText("Delete this custom theme? Terminals using it will return to Default.",

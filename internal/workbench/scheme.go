@@ -373,7 +373,6 @@ func (state *State) schemeAt(index int) (id, name string, scheme *colorScheme) {
 // the complete collection opens in a drawer.
 func (state *State) paintSchemeSettings(page *settingsPage) {
 	state.paintSchemePicks(page)
-	state.paintThemeManagement(page)
 }
 
 // paintSchemePicks is two rows: seven well-known built-ins, Rose Pine Moon from
@@ -391,6 +390,7 @@ func (state *State) paintSchemePicks(page *settingsPage) {
 			ui.Text(c, look).FontSize(metrics.FontSizeS).Weight(gfx.WeightSemibold).Color(pal.text).LineHeight(20).MarginSides(0, 0, 14, 0)
 			ui.Row(c).Items(ui.Center).MarginSides(0, 0, 10, 0).Children(func() {
 				ui.Text(c, m.SchemeQuickPicks).FontSize(metrics.FontSizeS).Weight(gfx.WeightSemibold).Color(pal.text).LineHeight(20).Grow(1)
+				page.button(hitThemeNew, state.themeText("New theme", "新建主题", "新增主題"), aiButtonOutline, false)
 				page.button(hitSchemeBrowseAll, fmt.Sprintf(m.SchemeMoreFmt, state.schemeTotal()), aiButtonOutline, false)
 			})
 			state.paintSchemeCards(page, state.schemeQuickPicks())
@@ -792,6 +792,7 @@ func (state *State) declareSchemeDrawerCard(c ui.C, index int) {
 		})
 	})
 	card.HitWith(schemeDrawerHit(index), name, gfx.HitOptions{Role: gfx.RoleButton, Selected: selected})
+	state.declareSchemeContextMenu(c, card, id)
 }
 
 // declareScheme declares one color scheme's card: its name and the four colors
@@ -828,5 +829,6 @@ func (state *State) declareScheme(c ui.C, page *settingsPage, index int) {
 		view.colors = append(view.colors, swatches[:]...)
 		page.add(settingsControl{kind: controlSwatches, slot: ui.Slot(c).Size(swatchPitch*3+swatchSize, swatchSize).Shrink(0), first: len(view.colors) - len(swatches), count: len(swatches)})
 	})
-	page.hitOn(card, schemeHit(index), name, gfx.HitOptions{Role: gfx.RoleButton, Selected: selected})
+	card.HitWith(schemeHit(index), name, gfx.HitOptions{Role: gfx.RoleButton, Selected: selected})
+	state.declareSchemeContextMenu(c, card, id)
 }

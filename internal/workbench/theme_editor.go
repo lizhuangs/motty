@@ -11,18 +11,19 @@ import (
 
 var themeEditorHits = tree.Feature("theme-editor")
 var (
-	hitThemeNew     = tree.ID(themeEditorHits, "new")
-	hitThemeCopy    = tree.ID(themeEditorHits, "copy")
-	hitThemeEdit    = tree.ID(themeEditorHits, "edit")
-	hitThemeDelete  = tree.ID(themeEditorHits, "delete")
-	hitThemeClose   = tree.ID(themeEditorHits, "close")
-	hitThemeSave    = tree.ID(themeEditorHits, "save")
-	hitThemeApply   = tree.ID(themeEditorHits, "apply")
-	hitThemeReset   = tree.ID(themeEditorHits, "reset")
-	hitThemePreview = tree.ID(themeEditorHits, "preview")
-	hitThemeName    = tree.ID(themeEditorHits, "name")
-	hitThemeOpacity = tree.ID(themeEditorHits, "opacity")
-	hitThemeColors  = tree.Sub(themeEditorHits, tree.Name("colors"))
+	hitThemeMaximize = tree.ID(themeEditorHits, "maximize")
+	hitThemeNew      = tree.ID(themeEditorHits, "new")
+	hitThemeCopy     = tree.ID(themeEditorHits, "copy")
+	hitThemeEdit     = tree.ID(themeEditorHits, "edit")
+	hitThemeDelete   = tree.ID(themeEditorHits, "delete")
+	hitThemeClose    = tree.ID(themeEditorHits, "close")
+	hitThemeSave     = tree.ID(themeEditorHits, "save")
+	hitThemeApply    = tree.ID(themeEditorHits, "apply")
+	hitThemeReset    = tree.ID(themeEditorHits, "reset")
+	hitThemePreview  = tree.ID(themeEditorHits, "preview")
+	hitThemeName     = tree.ID(themeEditorHits, "name")
+	hitThemeOpacity  = tree.ID(themeEditorHits, "opacity")
+	hitThemeColors   = tree.Sub(themeEditorHits, tree.Name("colors"))
 )
 
 type themeEditorState struct {
@@ -34,6 +35,7 @@ type themeEditorState struct {
 	hex, red, green, blue           ui.Field
 	opacity                         ui.SliderState
 	expanded, previewOnly, deleting bool
+	maximized, openPicker           bool
 	error                           string
 	colorInvalid                    bool
 	preview                         *terminal
@@ -63,7 +65,11 @@ func (state *State) resolvedScheme(id string) colorScheme {
 }
 
 func (state *State) openThemeEditor(copyTheme, newTheme bool) {
-	s := state.resolvedScheme(state.activeScheme())
+	state.openThemeEditorFor(state.activeScheme(), copyTheme, newTheme)
+}
+
+func (state *State) openThemeEditorFor(id string, copyTheme, newTheme bool) {
+	s := state.resolvedScheme(id)
 	if newTheme {
 		s = state.resolvedScheme(defaultSchemeID)
 	}

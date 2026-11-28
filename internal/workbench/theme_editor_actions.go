@@ -12,7 +12,9 @@ func (state *State) clickThemeManagement(id gfx.ID) bool {
 	case hitThemeCopy:
 		state.openThemeEditor(true, false)
 	case hitThemeEdit:
-		state.openThemeEditor(false, false)
+		if strings.HasPrefix(state.activeScheme(), customSchemePrefix) {
+			state.openThemeEditor(false, false)
+		}
 	case hitThemeDelete:
 		if strings.HasPrefix(state.activeScheme(), customSchemePrefix) {
 			state.openThemeEditor(false, false)
@@ -32,6 +34,8 @@ func (state *State) clickThemeEditor(id gfx.ID) {
 	case hitThemeReset:
 		e.draft = e.original
 		e.loadDraft()
+	case hitThemeMaximize:
+		e.maximized = !e.maximized
 	case hitThemePreview:
 		e.expanded = !e.expanded
 	case hitThemeSave, hitThemeApply:
