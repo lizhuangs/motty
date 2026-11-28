@@ -1506,6 +1506,10 @@ func (state *State) chooseAppearanceMode(mode appearanceMode) bool {
 	if mode == appearanceCustom && state.applicationTheme.Base == "" {
 		state.applicationTheme.Base = state.appearance.String()
 	}
+	// 切换界面自定义配色时保留正在使用的终端主题，避免重新跟随时回到旧主题。
+	if changed && state.appearanceMode == appearanceFollowTerminal && mode == appearanceCustom {
+		state.terminalSchemes[state.applicationTheme.baseAppearance()] = state.followScheme()
+	}
 	state.appearanceMode = mode
 	state.syncNativeAppearance() // before the system is read: a pin hides it
 	look := state.resolveAppearance()

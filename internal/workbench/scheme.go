@@ -546,7 +546,7 @@ func (state *State) schemeMenuItem(c ui.C, menu *ui.MenuItems, index int, active
 }
 
 // schemeQuickPicks is seven hand-written built-ins, one community pick and the
-// active scheme when it would otherwise be off the list.
+// active scheme and saved custom themes when they would otherwise be off the list.
 func (state *State) schemeQuickPicks() []int {
 	preferred := []string{defaultSchemeID, "windows-terminal", "dracula", "nord", "one-dark", "tokyo-night", "gruvbox-dark"}
 	picks := make([]int, 0, schemeColumns*2)
@@ -574,6 +574,11 @@ func (state *State) schemeQuickPicks() []int {
 	}
 	for index := 0; index < schemeCount && len(picks) < schemeColumns*2; index++ {
 		add(index, true)
+	}
+	// 自定义主题固定显示在同一组卡片中，不因当前外观或选择变化而消失。
+	for _, scheme := range state.managedSchemes {
+		index, ok := state.schemeIndexByID(scheme.id)
+		add(index, ok)
 	}
 	return picks
 }
