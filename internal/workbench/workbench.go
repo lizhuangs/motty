@@ -1503,14 +1503,15 @@ func (state *State) chooseAppearanceMode(mode appearanceMode) bool {
 		state.applicationTheme.FollowScheme = state.normalizeSchemeID(state.activeScheme())
 		state.applicationTheme.FollowBase = state.terminalSchemeAppearance().String()
 	}
-	if mode == appearanceCustom && state.applicationTheme.Base == "" {
-		state.applicationTheme.Base = state.appearance.String()
+	if mode == appearanceCustom && len(state.applicationTheme.BaseColors) == 0 {
+		state.seedApplicationThemeFromTerminal()
 	}
 	// 切换界面自定义配色时保留正在使用的终端主题，避免重新跟随时回到旧主题。
 	if changed && state.appearanceMode == appearanceFollowTerminal && mode == appearanceCustom {
 		state.terminalSchemes[state.applicationTheme.baseAppearance()] = state.followScheme()
 	}
 	state.appearanceMode = mode
+	state.applicationThemeUI.opacity.Value = float32(state.applicationOpacity())
 	state.syncNativeAppearance() // before the system is read: a pin hides it
 	look := state.resolveAppearance()
 	lookChanged := look != state.appearance

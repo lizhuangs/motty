@@ -29,14 +29,12 @@ func (state *State) paintApplicationThemeSettings(page *settingsPage) {
 				name = scheme.name
 			}
 			page.hintRow(fmt.Sprintf(label("Following %s. Choose a different scheme in %s.", "当前跟随 %s。可在「%s」选择其他主题。", "目前跟隨 %s。可在「%s」選擇其他主題。"), name, state.messages.Tools.SchemeGroup))
-			state.paintApplicationThemePreview(page)
 		})
 	}
 	if state.appearanceMode != appearanceCustom {
 		return
 	}
 	page.group(label("Interface colors", "界面颜色", "介面色彩"), func() {
-		state.paintApplicationThemePreview(page)
 		for index := range applicationPrimaryColors {
 			state.paintApplicationColor(page, index)
 		}

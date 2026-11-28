@@ -65,8 +65,8 @@ func TestApplicationThemeColorPickerAndPersistence(t *testing.T) {
 	}
 	color := gfx.RGB(59, 100, 128)
 	picker.SetDraftValue(components.ColorPickerValue{}.WithColor(color))
-	if preview := state.applicationPreviewPalette(); preview.shell != color || state.pal.shell == color {
-		t.Fatalf("draft %v and current shell %v", preview.shell, state.pal.shell)
+	if draft, open := picker.Draft(); !open || rgb8(draft) != rgb8(color) || state.pal.shell == color {
+		t.Fatalf("draft %v and current shell %v", draft, state.pal.shell)
 	}
 	for _, hit := range driver.Snapshot().Hits {
 		if hit.Label == state.messages.ColorPickerApply && hit.Role == gfx.RoleButton {

@@ -3,6 +3,7 @@ package workbench
 import (
 	"github.com/vivaui/viva/components"
 	"github.com/vivaui/viva/gfx"
+	"maps"
 )
 
 type applicationColorToken struct {
@@ -77,12 +78,19 @@ func readableApplicationColor(background, color, fallback gfx.Color, ratio float
 }
 
 func (config applicationTheme) palette() *palette {
+	colors := maps.Clone(config.BaseColors)
+	if colors == nil {
+		colors = make(map[string]string)
+	}
+	for key, value := range config.Colors {
+		colors[key] = value
+	}
 	pal := *config.baseAppearance().palette()
 	pal.dark = config.colorAppearance() == appearanceDark
 	apply := func(tokens []applicationColorToken) bool {
 		overridden := false
 		for _, token := range tokens {
-			if color, ok := components.ParseColorHex(config.Colors[token.key], false); ok {
+			if color, ok := components.ParseColorHex(colors[token.key], false); ok {
 				*token.color(&pal) = color
 				overridden = true
 			}
@@ -92,8 +100,15 @@ func (config applicationTheme) palette() *palette {
 	if apply(applicationColors[:applicationPrimaryColors]) {
 		pal.deriveApplicationColors()
 	}
+	// 修改基础界面颜色后重新派生标签/悬停色，仅手动高级设置可覆盖派生结果。
+	for _, token := range applicationColors[:applicationPrimaryColors] {
+		if _, ok := components.ParseColorHex(config.Colors[token.key], false); ok {
+			colors = config.Colors
+			break
+		}
+	}
 	apply(applicationColors[applicationPrimaryColors:])
-	if _, ok := components.ParseColorHex(config.Colors["tabActive"], false); ok {
+	if _, ok := components.ParseColorHex(colors["tabActive"], false); ok {
 		pal.tabCloseHot = blendApplicationColor(pal.tabActive, pal.text, 0.10)
 	}
 	return &pal

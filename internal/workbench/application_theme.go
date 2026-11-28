@@ -8,6 +8,7 @@ import (
 )
 
 type applicationTheme struct {
+	BaseColors   map[string]string `json:"baseColors,omitempty"`
 	Base         string            `json:"base,omitempty"`
 	FollowBase   string            `json:"followBase,omitempty"`
 	FollowScheme string            `json:"followScheme,omitempty"`
@@ -16,10 +17,11 @@ type applicationTheme struct {
 }
 
 func (theme applicationTheme) snapshot() *applicationTheme {
-	if theme.Base == "" && theme.FollowScheme == "" && len(theme.Colors) == 0 && theme.Opacity == nil {
+	if theme.Base == "" && theme.FollowScheme == "" && len(theme.Colors) == 0 && len(theme.BaseColors) == 0 && theme.Opacity == nil {
 		return nil
 	}
 	theme.Colors = maps.Clone(theme.Colors)
+	theme.BaseColors = maps.Clone(theme.BaseColors)
 	return &theme
 }
 
@@ -58,6 +60,9 @@ func applicationColorAppearance(rgb [3]uint8) appearance {
 
 func (theme applicationTheme) colorAppearance() appearance {
 	if color, ok := components.ParseColorHex(theme.Colors["workspace"], false); ok {
+		return applicationColorAppearance(rgb8(color))
+	}
+	if color, ok := components.ParseColorHex(theme.BaseColors["workspace"], false); ok {
 		return applicationColorAppearance(rgb8(color))
 	}
 	return theme.baseAppearance()

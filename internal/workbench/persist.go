@@ -1325,7 +1325,11 @@ func (state *State) restoreShared(saved savedState) {
 		state.terminalSchemes[appearanceDark] = state.normalizeSchemeID(saved.TerminalSchemeDark)
 		state.terminalSchemes[appearanceLight] = state.normalizeSchemeID(saved.TerminalSchemeLight)
 	}
-	if state.appearanceMode == appearanceFollowTerminal {
+	// 旧版自定义外观没有终端配色快照，待终端主题恢复后补齐，保留手动覆盖。
+	if state.appearanceMode == appearanceCustom && len(state.applicationTheme.BaseColors) == 0 {
+		state.seedApplicationThemeFromTerminal()
+	}
+	if state.appearanceMode == appearanceFollowTerminal || state.appearanceMode == appearanceCustom {
 		state.refreshApplicationTheme()
 	}
 	state.terminalPad = terminalPadFromString(saved.TerminalPadding)
