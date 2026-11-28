@@ -1,7 +1,6 @@
 package workbench
 
 import (
-	"fmt"
 	"github.com/vivaui/viva/components"
 	"github.com/vivaui/viva/gfx"
 	"github.com/vivaui/viva/ui"
@@ -109,11 +108,6 @@ func (state *State) declareThemeEditorForm(c ui.C) {
 		})
 	}
 	state.declareThemeColors(c)
-	label = state.themeText("Background opacity", "背景不透明度", "背景不透明度")
-	ui.Text(c, fmt.Sprintf("%s · %.0f%%", label, e.opacity.Value)).Color(state.pal.text).FontSize(13)
-	ui.Slider(c, &e.opacity).Range(0, 100).Step(1).Hit(hitThemeOpacity, label).FillWidth()
-	ui.Paragraph(c, state.themeText("Blends the background with the image or application background; text stays opaque.",
-		"背景与图片或应用底色混合，文字保持不透明。", "背景與圖片或應用底色混合，文字保持不透明。"), 3).FontSize(12).Color(state.pal.muted).LineHeight(18)
 	ui.Row(c).Gap(8).Children(func() {
 		reset := state.themeText("Reset changes", "重置修改", "重設修改")
 		ui.Button(c, reset).Outline().Hit(hitThemeReset, reset)

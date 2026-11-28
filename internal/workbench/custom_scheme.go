@@ -22,7 +22,6 @@ type savedCustomScheme struct {
 	Selection       [3]uint8     `json:"selection"`
 	SelectionText   [3]uint8     `json:"selection_text"`
 	CustomSelection bool         `json:"custom_selection,omitempty"`
-	Opacity         *int         `json:"opacity,omitempty"`
 }
 
 func (state *State) savedCustomSchemes() []savedCustomScheme {
@@ -30,7 +29,7 @@ func (state *State) savedCustomSchemes() []savedCustomScheme {
 	for _, s := range state.managedSchemes {
 		result = append(result, savedCustomScheme{ID: s.id, Name: s.name, Background: s.background,
 			Foreground: s.foreground, Cursor: s.cursor, ANSI: s.ansi, Selection: s.selection,
-			SelectionText: s.selectionText, CustomSelection: s.customSelection, Opacity: s.opacity})
+			SelectionText: s.selectionText, CustomSelection: s.customSelection})
 	}
 	return result
 }
@@ -45,17 +44,8 @@ func (state *State) restoreCustomSchemes(saved []savedCustomScheme) {
 		seen[s.ID] = true
 		state.managedSchemes = append(state.managedSchemes, colorScheme{id: s.ID, name: s.Name,
 			background: s.Background, foreground: s.Foreground, cursor: s.Cursor, ansi: s.ANSI,
-			selection: s.Selection, selectionText: s.SelectionText, customSelection: s.CustomSelection,
-			opacity: cloneSchemeOpacity(s.Opacity)})
+			selection: s.Selection, selectionText: s.SelectionText, customSelection: s.CustomSelection})
 	}
-}
-
-func cloneSchemeOpacity(value *int) *int {
-	if value == nil {
-		return nil
-	}
-	copy := max(0, min(100, *value))
-	return &copy
 }
 
 func (state *State) saveCustomScheme(s colorScheme) (string, error) {
@@ -74,7 +64,6 @@ func (state *State) saveCustomScheme(s colorScheme) (string, error) {
 	if !strings.HasPrefix(s.id, customSchemePrefix) {
 		s.id = customSchemePrefix + uuid.NewString()
 	}
-	s.opacity = cloneSchemeOpacity(s.opacity)
 	for i := range state.managedSchemes {
 		if state.managedSchemes[i].id == s.id {
 			state.managedSchemes[i] = s

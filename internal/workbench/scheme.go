@@ -26,7 +26,6 @@ type colorScheme struct {
 	ansi                     [16][3]uint8
 	selection, selectionText [3]uint8
 	customSelection          bool
-	opacity                  *int
 }
 
 const defaultSchemeID = "default"

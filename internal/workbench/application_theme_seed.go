@@ -6,9 +6,6 @@ func (state *State) seedApplicationThemeFromTerminal() {
 	pal := *look.palette()
 	if scheme, ok := state.schemeByID(state.activeScheme()); ok {
 		pal = applicationPaletteForScheme(*scheme)
-		if state.applicationTheme.Opacity == nil {
-			state.applicationTheme.Opacity = cloneSchemeOpacity(scheme.opacity)
-		}
 	}
 	theme := &state.applicationTheme
 	theme.Base = look.String()

@@ -33,12 +33,6 @@ func (state *State) paintApplicationOpacity(page *settingsPage) {
 }
 
 func (state *State) applicationOpacity() int {
-	if state.appearanceMode == appearanceFollowTerminal {
-		if scheme, ok := state.schemeByID(state.followScheme()); ok && scheme.opacity != nil {
-			return min(max(*scheme.opacity, 0), 100)
-		}
-		return 100
-	}
 	if state.appearanceMode != appearanceCustom {
 		return 100
 	}

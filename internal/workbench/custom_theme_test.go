@@ -14,7 +14,6 @@ func TestCustomThemeCopyRenameAndRestore(t *testing.T) {
 	e.name.SetText("My violet")
 	e.colors[0] = gfx.RGB(24, 12, 40)
 	e.colors[3], e.colors[4] = gfx.RGB(90, 60, 120), gfx.RGB(250, 245, 255)
-	e.opacity.Value = 75
 	state.clickThemeEditor(hitThemeApply)
 	id := state.activeScheme()
 	if id == "dracula" || state.modal != modalNone {
@@ -35,7 +34,7 @@ func TestCustomThemeCopyRenameAndRestore(t *testing.T) {
 	}
 	again := newTestState(t, options)
 	scheme, ok := again.schemeByID(id)
-	if !ok || scheme.name != "Renamed violet" || *scheme.opacity != 75 {
+	if !ok || scheme.name != "Renamed violet" {
 		t.Fatalf("restore: %+v", scheme)
 	}
 	if again.activeScheme() != id || again.termPal.selectionText != gfx.RGB(250, 245, 255) {

@@ -25,10 +25,6 @@ func (e *themeEditorState) loadDraft() {
 	for i, color := range s.ansi {
 		e.colors[i+5] = schemeRGB(color)
 	}
-	e.opacity.Value = 100
-	if s.opacity != nil {
-		e.opacity.Value = float32(*s.opacity)
-	}
 	e.syncColorFields()
 }
 
@@ -52,8 +48,6 @@ func (e *themeEditorState) collectDraft() colorScheme {
 	for i := range s.ansi {
 		s.ansi[i] = rgb8(e.colors[i+5])
 	}
-	opacity := int(e.opacity.Value)
-	s.opacity = &opacity
 	return s
 }
 

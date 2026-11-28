@@ -23,7 +23,6 @@ var (
 	hitThemeReset    = tree.ID(themeEditorHits, "reset")
 	hitThemePreview  = tree.ID(themeEditorHits, "preview")
 	hitThemeName     = tree.ID(themeEditorHits, "name")
-	hitThemeOpacity  = tree.ID(themeEditorHits, "opacity")
 	hitThemeColors   = tree.Sub(themeEditorHits, tree.Name("colors"))
 )
 
@@ -38,7 +37,6 @@ type themeEditorState struct {
 	liveColorLayout                 components.ColorPickerLayout
 	colorIndex                      int
 	hex, red, green, blue           ui.Field
-	opacity                         ui.SliderState
 	expanded, previewOnly, deleting bool
 	maximized, openPicker           bool
 	error                           string
@@ -61,7 +59,6 @@ func (state *State) themeText(en, zh, tw string) string {
 func (state *State) resolvedScheme(id string) colorScheme {
 	if s, ok := state.schemeByID(id); ok {
 		copy := *s
-		copy.opacity = cloneSchemeOpacity(s.opacity)
 		return copy
 	}
 	p := state.appearance.palette()

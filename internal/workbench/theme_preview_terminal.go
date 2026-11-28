@@ -24,7 +24,6 @@ func (state *State) paintThemePreviewTerminal(d *ui.DrawContext) {
 		canvas.DrawBitmapRegion(bitmap, gfx.Rect{Width: float32(bg.width), Height: float32(bg.height)}, d.Rect)
 	}
 	ground := p.terminal
-	ground.Alpha = float32(*s.opacity) / 100
 	if state.backgroundOn() {
 		ground.Alpha *= 1 - state.bg.visibility.Value/100
 	}

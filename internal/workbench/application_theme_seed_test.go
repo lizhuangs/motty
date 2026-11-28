@@ -45,13 +45,12 @@ func TestCustomApplicationOverridesStayIndependentOfTerminal(t *testing.T) {
 	state.setTerminalScheme(sourceID)
 	state.openThemeEditor(false, false)
 	state.themeEditor.colors[0] = gfx.RGB(80, 40, 60)
-	state.themeEditor.opacity.Value = 80
 	state.clickThemeEditor(hitThemeApply)
 	if state.pal.workspace != background {
 		t.Fatal("editing terminal overwrote custom interface")
 	}
 	state.chooseAppearanceMode(appearanceFollowTerminal)
-	if state.pal.workspace != gfx.RGB(80, 40, 60) || state.applicationOpacity() != 80 {
+	if state.pal.workspace != gfx.RGB(80, 40, 60) || state.applicationOpacity() != 100 {
 		t.Fatal("follow did not use edited terminal theme")
 	}
 	state.chooseAppearanceMode(appearanceCustom)

@@ -336,13 +336,6 @@ func (state *State) desktopTransparency() float32 {
 func (state *State) terminalGround() gfx.Color {
 	color := state.ground(state.termPal.terminal)
 	color.Alpha *= 1 - state.desktopTransparency()
-	schemeID := state.activeScheme()
-	if state.schemePreview.shown != "" {
-		schemeID = state.schemePreview.shown
-	}
-	if scheme, ok := state.schemeByID(schemeID); ok && scheme.opacity != nil {
-		color.Alpha *= float32(max(0, min(100, *scheme.opacity))) / 100
-	}
 	return color
 }
 
