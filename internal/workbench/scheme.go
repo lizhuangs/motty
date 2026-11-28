@@ -564,20 +564,16 @@ func (state *State) schemeQuickPicks() []int {
 	if index, ok := state.communitySchemeIndexByName("Rose Pine Moon"); ok {
 		add(index, ok)
 	}
-	if index, ok := state.schemeIndexByID(state.activeScheme()); ok && !seen[index] {
-		if len(picks) >= schemeColumns*2 {
-			picks[len(picks)-2] = index
-		} else {
-			picks = append(picks, index)
-		}
-		seen[index] = true
-	}
 	for index := 0; index < schemeCount && len(picks) < schemeColumns*2; index++ {
 		add(index, true)
 	}
 	// 自定义主题固定显示在同一组卡片中，不因当前外观或选择变化而消失。
 	for _, scheme := range state.managedSchemes {
 		index, ok := state.schemeIndexByID(scheme.id)
+		add(index, ok)
+	}
+	// 列表之外的当前主题放在末尾，不挤占内置或自定义主题的位置。
+	if index, ok := state.schemeIndexByID(state.activeScheme()); ok {
 		add(index, ok)
 	}
 	return picks
